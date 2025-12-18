@@ -1,9 +1,10 @@
 {
-  "version": "2.2.0",
-  "changelog": "Initial release with auto-update feature\n- Special Character Deleted",
+  "version": "2.1.0",
+  "changelog": "Initial release\n- Special Character Deleted\n- Unreal Engine Camera Creation",
   "min_maya_version": "2024",
   "release_date": "2025-12-18"
 
 }
+
 
 

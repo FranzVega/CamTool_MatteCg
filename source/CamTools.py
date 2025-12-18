@@ -352,7 +352,8 @@ def main():
                 backgroundColor=[0.3, 0.5, 0.7], c=check_updates_menu)
     cmds.separator()
     
-    cmds.text(label=f'v{__version__} - Created for MatteCG by Franz Vega', 
+    cmds.text(label=f'v{__version__} - Created by Franz Vega', 
               font="smallObliqueLabelFont", align="right")
 
     cmds.showWindow(window)
+

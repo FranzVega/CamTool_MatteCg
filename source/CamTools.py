@@ -4,9 +4,9 @@ import os
 import sys
 
 # CONFIGURACIÓN DE VERSIÓN Y ACTUALIZACIÓN
-__version__ = "2.0.0"  # Versión actual del script
-GITHUB_VERSION_URL = "https://github.com/FranzVega/CamTool_MatteCg/blob/main/version.json"
-GITHUB_SCRIPT_URL = "https://github.com/FranzVega/CamTool_MatteCg/blob/main/source/CamTools.py"
+__version__ = "2.1.0"  # Versión actual del script
+GITHUB_VERSION_URL = "https://raw.githubusercontent.com/FranzVega/CamTool_MatteCg/main/version.json"
+GITHUB_SCRIPT_URL = "https://raw.githubusercontent.com/FranzVega/CamTool_MatteCg/main/source/CamTools.py"
 
 
 def check_for_updates():
@@ -356,4 +356,3 @@ def main():
               font="smallObliqueLabelFont", align="right")
 
     cmds.showWindow(window)
-

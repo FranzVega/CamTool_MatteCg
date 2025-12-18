@@ -1,6 +1,7 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "changelog": "Initial release with auto-update feature\n- Rename camera functionality\n- Frame management\n- Render camera setup\n- Time slider configuration\n- Unreal Engine export\n- Auto-update system",
   "min_maya_version": "2024",
   "release_date": "2025-12-18"
+
 }

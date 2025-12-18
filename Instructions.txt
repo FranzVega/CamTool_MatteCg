@@ -1,0 +1,16 @@
+1) Place the mtoBlend folder where you want it to be.
+for example: "C:/Users/YOU/Documents/maya/scripts".
+
+This folder is a good place to keep it, but it can be anywhere.
+
+2) Once you have the mtoBlend folder where you want it to be,
+then just drag and drop the "install.mel" file into Maya viewport.
+
+This will add the mtoBlend tool to the current shelf.
+
+mtoBlend was only tested in maya 2018 to 2024
+
+Please, consider support me so I can make updates in the future and develope more stuff.
+
+For support, go to: https://franzavc.gumroad.com
+Or just follow me om instagram: @franz_avc

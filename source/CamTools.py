@@ -1,5 +1,175 @@
 import maya.cmds as cmds
 import re
+import os
+import sys
+
+# CONFIGURACIÓN DE VERSIÓN Y ACTUALIZACIÓN
+__version__ = "2.0.0"  # Versión actual del script
+GITHUB_VERSION_URL = "https://github.com/FranzVega/CamTool_MatteCg/blob/main/version.json"
+GITHUB_SCRIPT_URL = "https://github.com/FranzVega/CamTool_MatteCg/blob/main/source/CamTools.py"
+
+
+def check_for_updates():
+    """Verifica si hay una nueva versión disponible en GitHub"""
+    try:
+        # Intentar importar urllib (Python 2 y 3 compatible)
+        try:
+            from urllib.request import urlopen  # Python 3
+        except ImportError:
+            from urllib2 import urlopen  # Python 2
+        
+        import json
+        
+        # Descargar información de versión
+        response = urlopen(GITHUB_VERSION_URL, timeout=5)
+        version_data = json.loads(response.read().decode('utf-8'))
+        
+        latest_version = version_data.get("version", "0.0.0")
+        changelog = version_data.get("changelog", "No changelog available")
+        
+        # Comparar versiones
+        if compare_versions(latest_version, __version__) > 0:
+            return {
+                "update_available": True,
+                "latest_version": latest_version,
+                "current_version": __version__,
+                "changelog": changelog
+            }
+        else:
+            return {
+                "update_available": False,
+                "latest_version": latest_version,
+                "current_version": __version__
+            }
+    
+    except Exception as e:
+        print(f"Error checking for updates: {str(e)}")
+        return None
+
+
+def compare_versions(version1, version2):
+    """
+    Compara dos versiones en formato X.Y.Z
+    Retorna: 1 si version1 > version2, -1 si version1 < version2, 0 si son iguales
+    """
+    v1_parts = [int(x) for x in version1.split('.')]
+    v2_parts = [int(x) for x in version2.split('.')]
+    
+    for i in range(max(len(v1_parts), len(v2_parts))):
+        v1 = v1_parts[i] if i < len(v1_parts) else 0
+        v2 = v2_parts[i] if i < len(v2_parts) else 0
+        
+        if v1 > v2:
+            return 1
+        elif v1 < v2:
+            return -1
+    
+    return 0
+
+
+def download_update():
+    """Descarga e instala la actualización desde GitHub"""
+    try:
+        # Intentar importar urllib (Python 2 y 3 compatible)
+        try:
+            from urllib.request import urlopen  # Python 3
+        except ImportError:
+            from urllib2 import urlopen  # Python 2
+        
+        # Descargar el nuevo script
+        response = urlopen(GITHUB_SCRIPT_URL, timeout=10)
+        new_script_content = response.read().decode('utf-8')
+        
+        # Obtener la ruta del script actual
+        current_script_path = __file__
+        backup_path = current_script_path + ".backup"
+        
+        # Crear backup del script actual
+        with open(current_script_path, 'r') as f:
+            current_content = f.read()
+        
+        with open(backup_path, 'w') as f:
+            f.write(current_content)
+        
+        # Escribir el nuevo script
+        with open(current_script_path, 'w') as f:
+            f.write(new_script_content)
+        
+        return True, "Update successful! Please restart Maya or reload the script."
+    
+    except Exception as e:
+        # Si algo sale mal, restaurar el backup
+        try:
+            if os.path.exists(backup_path):
+                with open(backup_path, 'r') as f:
+                    backup_content = f.read()
+                with open(current_script_path, 'w') as f:
+                    f.write(backup_content)
+        except:
+            pass
+        
+        return False, f"Update failed: {str(e)}"
+
+
+def show_update_dialog(update_info):
+    """Muestra un diálogo con información de actualización"""
+    if update_info is None:
+        cmds.confirmDialog(
+            title='Update Check',
+            message='Could not check for updates. Please check your internet connection.',
+            button=['OK'],
+            defaultButton='OK'
+        )
+        return
+    
+    if not update_info["update_available"]:
+        cmds.confirmDialog(
+            title='No Updates',
+            message=f'You are using the latest version ({__version__})',
+            button=['OK'],
+            defaultButton='OK'
+        )
+        return
+    
+    # Hay actualización disponible
+    message = f'New version available!\n\n'
+    message += f'Current version: {update_info["current_version"]}\n'
+    message += f'Latest version: {update_info["latest_version"]}\n\n'
+    message += f'Changelog:\n{update_info["changelog"]}\n\n'
+    message += f'Do you want to update now?'
+    
+    result = cmds.confirmDialog(
+        title='Update Available',
+        message=message,
+        button=['Update Now', 'Later'],
+        defaultButton='Update Now',
+        cancelButton='Later',
+        dismissString='Later'
+    )
+    
+    if result == 'Update Now':
+        success, msg = download_update()
+        cmds.confirmDialog(
+            title='Update Status',
+            message=msg,
+            button=['OK']
+        )
+        
+        if success:
+            # Recargar el módulo
+            try:
+                import importlib
+                importlib.reload(sys.modules[__name__])
+                cmds.warning("Script updated! Reopening window...")
+                main()
+            except:
+                pass
+
+
+def check_updates_menu(*args):
+    """Función para el botón de verificar actualizaciones"""
+    update_info = check_for_updates()
+    show_update_dialog(update_info)
 
 
 def renameCamera(*args):
@@ -47,14 +217,11 @@ def renameFrames(*args):
     start_frame = int(cmds.playbackOptions(query=True, minTime=True))
     end_frame = int(cmds.playbackOptions(query=True, maxTime=True))
     
-    # Buscar si ya tiene información de frames
     match = re.search(r"_FR_\d+_\d+", camera)
     
     if match:
-        # Reemplazar los frames existentes
         new_name = re.sub(r"_FR_\d+_\d+", f"_FR_{start_frame}_{end_frame}", camera)
     else:
-        # Agregar frames al final
         new_name = f"{camera}_FR_{start_frame}_{end_frame}"
     
     try:
@@ -73,14 +240,12 @@ def setRenderCam(*args):
         return
     
     camera = selected[0]
-    
-    # Verificar si es una cámara
     shapes = cmds.listRelatives(camera, shapes=True, type='camera')
+    
     if not shapes:
         cmds.confirmDialog(title='Error', message='Selected object is not a camera!', button=['OK'])
         return
     
-    # Establecer como cámara de render
     cmds.lookThru(camera)
     panel = cmds.getPanel(withFocus=True)
     cmds.modelEditor(panel, edit=True, camera=camera)
@@ -97,8 +262,6 @@ def setTimeSlider(*args):
         return
     
     camera = selected[0]
-    
-    # Buscar los frames en el nombre de la cámara
     match = re.search(r"_FR_(\d+)_(\d+)", camera)
     
     if not match:
@@ -108,7 +271,6 @@ def setTimeSlider(*args):
     start_frame = int(match.group(1))
     end_frame = int(match.group(2))
     
-    # Establecer el time slider
     cmds.playbackOptions(minTime=start_frame, maxTime=end_frame)
     cmds.playbackOptions(animationStartTime=start_frame, animationEndTime=end_frame)
     cmds.currentTime(start_frame)
@@ -125,8 +287,6 @@ def createUnrealCamera(*args):
         return
     
     camera = selected[0]
-    
-    # Verificar que el nombre tenga el formato correcto con frames
     match = re.search(r"_FR_(\d+)_(\d+)", camera)
     
     if not match:
@@ -136,25 +296,18 @@ def createUnrealCamera(*args):
     start_frame = int(match.group(1))
     end_frame = int(match.group(2))
     
-    # Obtener el path de la escena actual
     scene_path = cmds.file(query=True, sceneName=True)
     
     if not scene_path:
         cmds.confirmDialog(title='Error', message='Please save the scene first!', button=['OK'])
         return
     
-    # Crear el path para el FBX
-    import os
     scene_dir = os.path.dirname(scene_path)
     fbx_path = os.path.join(scene_dir, f"{camera}.fbx")
     
-    # Seleccionar solo la cámara
     cmds.select(camera, replace=True)
-    
-    # Configurar opciones de exportación FBX
     cmds.loadPlugin('fbxmaya', quiet=True)
     
-    # Exportar FBX
     try:
         cmds.file(fbx_path, force=True, options="v=0", type="FBX export", 
                   preserveReferences=True, exportSelected=True)
@@ -165,12 +318,21 @@ def createUnrealCamera(*args):
 
 def main():
     """Función principal que crea la interfaz de usuario"""
+    # Verificar actualizaciones al abrir (opcional, puedes comentar esta línea)
+    update_info = check_for_updates()
+    if update_info and update_info["update_available"]:
+        # Mostrar notificación sutil en lugar de diálogo
+        cmds.warning(f"CamTools: New version {update_info['latest_version']} available! Check 'About/Updates' menu.")
+    
     # Evitar ventanas duplicadas
     if cmds.window("camToolsWin", exists=True):
         cmds.deleteUI("camToolsWin")
 
-    window = cmds.window("camToolsWin", title='CamTools version mattecg 3.0', iconName='CamTools', widthHeight=(300, 400))
-    cmds.columnLayout(adj=1)
+    window = cmds.window("camToolsWin", title=f'CamTools v{__version__}', iconName='CamTools', widthHeight=(300, 450))
+    
+    # Layout principal
+    main_layout = cmds.columnLayout(adj=1)
+    
     cmds.text(label='Choose an option', w=300, h=30)
     cmds.separator()
 
@@ -182,8 +344,15 @@ def main():
     cmds.separator()
     cmds.button(label='Set Time Slider', w=300, h=50, c=setTimeSlider)
     cmds.separator()
-    cmds.button(label='Export Unreal Engine Camera', w=300, h=50, c=createUnrealCamera)
+    cmds.button(label='Create Unreal Engine Camera', w=300, h=50, c=createUnrealCamera)
+    cmds.separator(height=20)
+    
+    # Botón de actualización
+    cmds.button(label='Check for Updates', w=300, h=30, 
+                backgroundColor=[0.3, 0.5, 0.7], c=check_updates_menu)
     cmds.separator()
-    cmds.text(label='Created by Franz Vega', font="smallObliqueLabelFont", align="right")
+    
+    cmds.text(label=f'v{__version__} - Created for MatteCG by Franz Vega', 
+              font="smallObliqueLabelFont", align="right")
 
     cmds.showWindow(window)

@@ -1,16 +1,17 @@
+# -*- coding: utf-8 -*-
 import maya.cmds as cmds
 import re
 import os
 import sys
 
-# CONFIGURACIÓN DE VERSIÓN Y ACTUALIZACIÓN
-__version__ = "2.1.0"  # Versión actual del script
+# CONFIGURACION DE VERSION Y ACTUALIZACION
+__version__ = "2.2.0"  # Version actual del script
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/FranzVega/CamTool_MatteCg/main/version.json"
 GITHUB_SCRIPT_URL = "https://raw.githubusercontent.com/FranzVega/CamTool_MatteCg/main/source/CamTools.py"
 
 
 def check_for_updates():
-    """Verifica si hay una nueva versión disponible en GitHub"""
+    """Verifica si hay una nueva version disponible en GitHub"""
     try:
         # Intentar importar urllib (Python 2 y 3 compatible)
         try:
@@ -20,7 +21,7 @@ def check_for_updates():
         
         import json
         
-        # Descargar información de versión
+        # Descargar informacion de version
         response = urlopen(GITHUB_VERSION_URL, timeout=5)
         version_data = json.loads(response.read().decode('utf-8'))
         
@@ -43,7 +44,7 @@ def check_for_updates():
             }
     
     except Exception as e:
-        print(f"Error checking for updates: {str(e)}")
+        print("Error checking for updates: {0}".format(str(e)))
         return None
 
 
@@ -68,7 +69,7 @@ def compare_versions(version1, version2):
 
 
 def download_update():
-    """Descarga e instala la actualización desde GitHub"""
+    """Descarga e instala la actualizacion desde GitHub"""
     try:
         # Intentar importar urllib (Python 2 y 3 compatible)
         try:
@@ -84,16 +85,32 @@ def download_update():
         current_script_path = __file__
         backup_path = current_script_path + ".backup"
         
-        # Crear backup del script actual
-        with open(current_script_path, 'r') as f:
-            current_content = f.read()
+        # Crear backup del script actual con encoding UTF-8
+        try:
+            with open(current_script_path, 'r', encoding='utf-8') as f:
+                current_content = f.read()
+        except TypeError:
+            # Python 2 no soporta el parametro encoding directamente
+            import io
+            with io.open(current_script_path, 'r', encoding='utf-8') as f:
+                current_content = f.read()
         
-        with open(backup_path, 'w') as f:
-            f.write(current_content)
+        try:
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                f.write(current_content)
+        except TypeError:
+            import io
+            with io.open(backup_path, 'w', encoding='utf-8') as f:
+                f.write(current_content)
         
-        # Escribir el nuevo script
-        with open(current_script_path, 'w') as f:
-            f.write(new_script_content)
+        # Escribir el nuevo script con encoding UTF-8
+        try:
+            with open(current_script_path, 'w', encoding='utf-8') as f:
+                f.write(new_script_content)
+        except TypeError:
+            import io
+            with io.open(current_script_path, 'w', encoding='utf-8') as f:
+                f.write(new_script_content)
         
         return True, "Update successful! Please restart Maya or reload the script."
     
@@ -101,18 +118,25 @@ def download_update():
         # Si algo sale mal, restaurar el backup
         try:
             if os.path.exists(backup_path):
-                with open(backup_path, 'r') as f:
-                    backup_content = f.read()
-                with open(current_script_path, 'w') as f:
-                    f.write(backup_content)
+                try:
+                    with open(backup_path, 'r', encoding='utf-8') as f:
+                        backup_content = f.read()
+                    with open(current_script_path, 'w', encoding='utf-8') as f:
+                        f.write(backup_content)
+                except TypeError:
+                    import io
+                    with io.open(backup_path, 'r', encoding='utf-8') as f:
+                        backup_content = f.read()
+                    with io.open(current_script_path, 'w', encoding='utf-8') as f:
+                        f.write(backup_content)
         except:
             pass
         
-        return False, f"Update failed: {str(e)}"
+        return False, "Update failed: {0}".format(str(e))
 
 
 def show_update_dialog(update_info):
-    """Muestra un diálogo con información de actualización"""
+    """Muestra un dialogo con informacion de actualizacion"""
     if update_info is None:
         cmds.confirmDialog(
             title='Update Check',
@@ -125,18 +149,18 @@ def show_update_dialog(update_info):
     if not update_info["update_available"]:
         cmds.confirmDialog(
             title='No Updates',
-            message=f'You are using the latest version ({__version__})',
+            message='You are using the latest version ({0})'.format(__version__),
             button=['OK'],
             defaultButton='OK'
         )
         return
     
-    # Hay actualización disponible
-    message = f'New version available!\n\n'
-    message += f'Current version: {update_info["current_version"]}\n'
-    message += f'Latest version: {update_info["latest_version"]}\n\n'
-    message += f'Changelog:\n{update_info["changelog"]}\n\n'
-    message += f'Do you want to update now?'
+    # Hay actualizacion disponible
+    message = 'New version available!\n\n'
+    message += 'Current version: {0}\n'.format(update_info["current_version"])
+    message += 'Latest version: {0}\n\n'.format(update_info["latest_version"])
+    message += 'Changelog:\n{0}\n\n'.format(update_info["changelog"])
+    message += 'Do you want to update now?'
     
     result = cmds.confirmDialog(
         title='Update Available',
@@ -156,7 +180,7 @@ def show_update_dialog(update_info):
         )
         
         if success:
-            # Recargar el módulo
+            # Recargar el modulo
             try:
                 import importlib
                 importlib.reload(sys.modules[__name__])
@@ -167,13 +191,13 @@ def show_update_dialog(update_info):
 
 
 def check_updates_menu(*args):
-    """Función para el botón de verificar actualizaciones"""
+    """Funcion para el boton de verificar actualizaciones"""
     update_info = check_for_updates()
     show_update_dialog(update_info)
 
 
 def renameCamera(*args):
-    """Renombra la cámara seleccionada basándose en el nombre de la escena y los frames"""
+    """Renombra la camara seleccionada basandose en el nombre de la escena y los frames"""
     selected_cameras = cmds.ls(selection=True)
 
     if not selected_cameras:
@@ -200,13 +224,13 @@ def renameCamera(*args):
 
     try:
         cmds.rename(camera, new_name)
-        cmds.confirmDialog(title='Success', message=f'Camera renamed to: {new_name}', button=['OK'])
+        cmds.confirmDialog(title='Success', message='Camera renamed to: {0}'.format(new_name), button=['OK'])
     except Exception as e:
-        cmds.confirmDialog(title='Error', message=f'Could not rename camera: {str(e)}', button=['OK'])
+        cmds.confirmDialog(title='Error', message='Could not rename camera: {0}'.format(str(e)), button=['OK'])
 
 
 def renameFrames(*args):
-    """Renombra o agrega información de frames a la cámara seleccionada"""
+    """Renombra o agrega informacion de frames a la camara seleccionada"""
     selected = cmds.ls(selection=True)
     
     if not selected:
@@ -220,19 +244,19 @@ def renameFrames(*args):
     match = re.search(r"_FR_\d+_\d+", camera)
     
     if match:
-        new_name = re.sub(r"_FR_\d+_\d+", f"_FR_{start_frame}_{end_frame}", camera)
+        new_name = re.sub(r"_FR_\d+_\d+", "_FR_{0}_{1}".format(start_frame, end_frame), camera)
     else:
-        new_name = f"{camera}_FR_{start_frame}_{end_frame}"
+        new_name = "{0}_FR_{1}_{2}".format(camera, start_frame, end_frame)
     
     try:
         cmds.rename(camera, new_name)
-        cmds.confirmDialog(title='Success', message=f'Camera renamed to: {new_name}', button=['OK'])
+        cmds.confirmDialog(title='Success', message='Camera renamed to: {0}'.format(new_name), button=['OK'])
     except Exception as e:
-        cmds.confirmDialog(title='Error', message=f'Could not rename camera: {str(e)}', button=['OK'])
+        cmds.confirmDialog(title='Error', message='Could not rename camera: {0}'.format(str(e)), button=['OK'])
 
 
 def setRenderCam(*args):
-    """Establece la cámara seleccionada como cámara de render"""
+    """Establece la camara seleccionada como camara de render"""
     selected = cmds.ls(selection=True, type='transform')
     
     if not selected:
@@ -250,11 +274,11 @@ def setRenderCam(*args):
     panel = cmds.getPanel(withFocus=True)
     cmds.modelEditor(panel, edit=True, camera=camera)
     
-    cmds.confirmDialog(title='Success', message=f'{camera} set as render camera', button=['OK'])
+    cmds.confirmDialog(title='Success', message='{0} set as render camera'.format(camera), button=['OK'])
 
 
 def setTimeSlider(*args):
-    """Establece el time slider basándose en el nombre de la cámara seleccionada"""
+    """Establece el time slider basandose en el nombre de la camara seleccionada"""
     selected = cmds.ls(selection=True)
     
     if not selected:
@@ -275,11 +299,11 @@ def setTimeSlider(*args):
     cmds.playbackOptions(animationStartTime=start_frame, animationEndTime=end_frame)
     cmds.currentTime(start_frame)
     
-    cmds.confirmDialog(title='Success', message=f'Time slider set to: {start_frame} - {end_frame}', button=['OK'])
+    cmds.confirmDialog(title='Success', message='Time slider set to: {0} - {1}'.format(start_frame, end_frame), button=['OK'])
 
 
 def createUnrealCamera(*args):
-    """Exporta la cámara seleccionada como FBX para Unreal Engine"""
+    """Exporta la camara seleccionada como FBX para Unreal Engine"""
     selected = cmds.ls(selection=True, type='transform')
     
     if not selected:
@@ -303,7 +327,7 @@ def createUnrealCamera(*args):
         return
     
     scene_dir = os.path.dirname(scene_path)
-    fbx_path = os.path.join(scene_dir, f"{camera}.fbx")
+    fbx_path = os.path.join(scene_dir, "{0}.fbx".format(camera))
     
     cmds.select(camera, replace=True)
     cmds.loadPlugin('fbxmaya', quiet=True)
@@ -311,24 +335,24 @@ def createUnrealCamera(*args):
     try:
         cmds.file(fbx_path, force=True, options="v=0", type="FBX export", 
                   preserveReferences=True, exportSelected=True)
-        cmds.confirmDialog(title='Success', message=f'Camera exported to:\n{fbx_path}', button=['OK'])
+        cmds.confirmDialog(title='Success', message='Camera exported to:\n{0}'.format(fbx_path), button=['OK'])
     except Exception as e:
-        cmds.confirmDialog(title='Error', message=f'Export failed:\n{str(e)}', button=['OK'])
+        cmds.confirmDialog(title='Error', message='Export failed:\n{0}'.format(str(e)), button=['OK'])
 
 
 def main():
-    """Función principal que crea la interfaz de usuario"""
-    # Verificar actualizaciones al abrir (opcional, puedes comentar esta línea)
+    """Funcion principal que crea la interfaz de usuario"""
+    # Verificar actualizaciones al abrir (opcional, puedes comentar esta linea)
     update_info = check_for_updates()
     if update_info and update_info["update_available"]:
-        # Mostrar notificación sutil en lugar de diálogo
-        cmds.warning(f"CamTools: New version {update_info['latest_version']} available! Check 'About/Updates' menu.")
+        # Mostrar notificacion sutil en lugar de dialogo
+        cmds.warning("CamTools: New version {0} available! Check 'Check for Updates' button.".format(update_info['latest_version']))
     
     # Evitar ventanas duplicadas
     if cmds.window("camToolsWin", exists=True):
         cmds.deleteUI("camToolsWin")
 
-    window = cmds.window("camToolsWin", title=f'CamTools v{__version__}', iconName='CamTools', widthHeight=(300, 450))
+    window = cmds.window("camToolsWin", title='CamTools v{0}'.format(__version__), iconName='CamTools', widthHeight=(300, 450))
     
     # Layout principal
     main_layout = cmds.columnLayout(adj=1)
@@ -347,12 +371,12 @@ def main():
     cmds.button(label='Create Unreal Engine Camera', w=300, h=50, c=createUnrealCamera)
     cmds.separator(height=20)
     
-    # Botón de actualización
+    # Boton de actualizacion
     cmds.button(label='Check for Updates', w=300, h=30, 
                 backgroundColor=[0.3, 0.5, 0.7], c=check_updates_menu)
     cmds.separator()
     
-    cmds.text(label=f'v{__version__} - Created by Franz Vega', 
+    cmds.text(label='v{0} - Created by Franz Vega'.format(__version__), 
               font="smallObliqueLabelFont", align="right")
 
     cmds.showWindow(window)
